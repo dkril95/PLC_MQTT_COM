@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <POU Name="PRG_MQTT_Client" Id="{6857cbae-53e7-4a87-a380-294b3826b178}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_MQTT_Client
+VAR
+    (* MQTT client + message queue / message object *)
+    fbMqttClient     : FB_IotMqttClient;
+    fbMessageQueue   : FB_IotMqttMessageQueue;
+    fbMessage        : FB_IotMqttMessage;
+
+    (* control flags *)
+    bSetParameter    : BOOL := TRUE;    // ustaw parametry tylko raz
+    bConnect         : BOOL := TRUE;    // włącz połączenie
+    bSubscribed      : BOOL := FALSE;   // flaga subskrypcji
+
+    (* publish / subscribe topics & payloads *)
+    sTopicPub        : STRING(255) := 'factory/data';
+    sTopicSub        : STRING(255) := 'factory/command';
+    {attribute 'TcEncoding':='UTF-8'}
+    sTopicRcv        : STRING(255);
+    {attribute 'TcEncoding':='UTF-8'}
+	sPart1      : STRING(80);
+    sPart2      : STRING(120);
+    sPart3      : STRING(200);
+	ulTimeMs    : UDINT;
+    sPayloadRcv      : STRING(255);
+    sPayloadPub      : STRING(255);
+
+    (* timer for periodic publish *)
+    fbTimer          : TON := (PT := T#1S);
+    iCounter         : UDINT := 0;
+
+    (* status / debug *)
+    bConnected       : BOOL := FALSE;
+    hrError          : UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// --- set parameters once (host, port, optional client id/user) ---
+IF bSetParameter THEN
+    bSetParameter := FALSE;
+
+    fbMqttClient.sHostName := 'localhost';      // broker
+    fbMqttClient.nHostPort := 1883;             // default MQTT port
+
+    // link message queue so driver enqueues incoming messages here
+    fbMqttClient.ipMessageQueue := fbMessageQueue;
+END_IF
+
+// --- call/execute the client cyclically (driver will manage connect/keepalive/reconnect) ---
+fbMqttClient.Execute(bConnect);
+
+// store connection status
+bConnected := fbMqttClient.bConnected;
+
+// --- subscribe once when connected ---
+IF bConnected THEN
+    IF NOT bSubscribed THEN
+        // subscribe with QoS 0 (AtMostOnceDelivery)
+        bSubscribed := fbMqttClient.Subscribe(sTopic := sTopicSub, eQoS := TcIotMqttQos.AtMostOnceDelivery);
+    END_IF
+END_IF
+
+// --- publish periodically (every 1s) ---
+IF bConnected THEN
+    fbTimer(IN := TRUE);
+    IF fbTimer.Q THEN
+        fbTimer(IN := FALSE);
+        iCounter := iCounter + 1;
+        // prepare payload as a simple JSON-like string (or use Tc3_JsonXml for proper JSON)
+		ulTimeMs := (TIME() / T#1MS);
+        sPart1 := CONCAT('{"counter":', TO_STRING(iCounter));
+		sPart2 := CONCAT(sPart1, ',"time_ms":');
+		sPart3 := CONCAT(sPart2, TO_STRING(ulTimeMs));
+		sPayloadPub := CONCAT(sPart3, '}');
+
+        // Publish: use LEN2(...) + 1 for null termination as in examples
+        fbMqttClient.Publish(
+            sTopic := sTopicPub,
+            pPayload := ADR(sPayloadPub),
+            nPayloadSize := LEN(ADR(sPayloadPub)) + 1,
+            eQoS := TcIotMqttQos.AtMostOnceDelivery,
+            bRetain := FALSE,
+            bQueue := FALSE
+        );
+    END_IF
+END_IF
+
+// --- handle incoming messages from queue (one message per cycle) ---
+IF fbMessageQueue.nQueuedMessages > 0 THEN
+    IF fbMessageQueue.Dequeue(fbMessage := fbMessage) THEN
+        // read topic and payload into strings
+        fbMessage.GetTopic(pTopic := ADR(sTopicRcv), nTopicSize := SIZEOF(sTopicRcv));
+        fbMessage.GetPayload(pPayload := ADR(sPayloadRcv), nPayloadSize := SIZEOF(sPayloadRcv), bSetNullTermination := FALSE);
+
+        // simple handling: if payload contains "START" or "STOP", set local actions
+        IF FIND(sPayloadRcv, 'START') > 0 THEN
+            // Example action on START: reset counter
+            iCounter := 0;
+        ELSIF FIND(sPayloadRcv, 'STOP') > 0 THEN
+            // Example action on STOP: set counter to max (demo)
+            iCounter := 4294967295; // just example
+        END_IF
+
+        // (optional) you can also publish an acknowledgment or log message
+    END_IF
+END_IF
+
+// --- error / debug outputs (optional) ---
+hrError := fbMqttClient.hrErrorCode; // readable in watch window]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

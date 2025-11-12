@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+  <DUT Name="sProcessData" Id="{47bef7a5-1416-42c6-a39e-2017090a8818}">
+    <Declaration><![CDATA[TYPE sProcessData :
+STRUCT
+	rTemperature : REAL;
+    rPressure : REAL;
+    rFlowRate : REAL;
+    iCounter : INT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
