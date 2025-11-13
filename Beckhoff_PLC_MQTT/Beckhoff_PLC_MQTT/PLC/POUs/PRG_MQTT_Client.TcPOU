@@ -22,7 +22,6 @@ VAR
 	sPart1      : STRING(80);
     sPart2      : STRING(120);
     sPart3      : STRING(200);
-	ulTimeMs    : UDINT;
     sPayloadRcv      : STRING(255);
     sPayloadPub      : STRING(255);
 
@@ -68,17 +67,16 @@ IF bConnected THEN
         fbTimer(IN := FALSE);
         iCounter := iCounter + 1;
         // prepare payload as a simple JSON-like string (or use Tc3_JsonXml for proper JSON)
-		ulTimeMs := (TIME() / T#1MS);
         sPart1 := CONCAT('{"counter":', TO_STRING(iCounter));
 		sPart2 := CONCAT(sPart1, ',"time_ms":');
-		sPart3 := CONCAT(sPart2, TO_STRING(ulTimeMs));
+		sPart3 := CONCAT(sPart2, TIME_TO_STRING(TIME()));
 		sPayloadPub := CONCAT(sPart3, '}');
 
         // Publish: use LEN2(...) + 1 for null termination as in examples
         fbMqttClient.Publish(
             sTopic := sTopicPub,
             pPayload := ADR(sPayloadPub),
-            nPayloadSize := LEN(ADR(sPayloadPub)) + 1,
+            nPayloadSize := SIZEOF(sPayloadPub),
             eQoS := TcIotMqttQos.AtMostOnceDelivery,
             bRetain := FALSE,
             bQueue := FALSE
