@@ -19,9 +19,14 @@ VAR
     {attribute 'TcEncoding':='UTF-8'}
     sTopicRcv        : STRING(255);
     {attribute 'TcEncoding':='UTF-8'}
-	sPart1      : STRING(80);
-    sPart2      : STRING(120);
-    sPart3      : STRING(200);
+	sPart1      : STRING(40);
+    sPart2      : STRING(80);
+    sPart3      : STRING(120);
+    sPart4		: STRING(160);
+	sPart5		: STRING(200);
+	sPart6		: STRING(255);
+	sPart7		: STRING(255);
+	sPart8		: STRING(255);
     sPayloadRcv      : STRING(255);
     sPayloadPub      : STRING(255);
 
@@ -67,10 +72,16 @@ IF bConnected THEN
         fbTimer(IN := FALSE);
         iCounter := iCounter + 1;
         // prepare payload as a simple JSON-like string (or use Tc3_JsonXml for proper JSON)
-        sPart1 := CONCAT('{"counter":', TO_STRING(iCounter));
+		sPart1 := CONCAT('{"counter":', TO_STRING(iCounter));
 		sPart2 := CONCAT(sPart1, ',"time_ms":');
 		sPart3 := CONCAT(sPart2, TIME_TO_STRING(TIME()));
-		sPayloadPub := CONCAT(sPart3, '}');
+		sPart4 := CONCAT(sPart3, ',"Temperature_C":');
+		sPart5 := CONCAT(sPart4, TO_STRING(GVL_GlobalVars.g_stProcessData.rTemperature));
+		sPart6 := CONCAT(sPart5, ',"Pressure_bar":');
+		sPart7 := CONCAT(sPart6, TO_STRING(GVL_GlobalVars.g_stProcessData.rPressure));
+		sPart8 := CONCAT(sPart7, ',"FlowRate_lpm":');
+		sPayloadPub := CONCAT(sPart8, TO_STRING(GVL_GlobalVars.g_stProcessData.rFlowRate));
+		sPayloadPub := CONCAT(sPayloadPub, '}');
 
         // Publish: use LEN2(...) + 1 for null termination as in examples
         fbMqttClient.Publish(
