@@ -11,72 +11,135 @@ class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-        Console.WriteLine("🔌 Starting MQTT Client...");
+        bool isConnected = false;
+        bool isSubscribed = false;
+
         var factory = new MqttFactory();
         var client = factory.CreateMqttClient();
 
-        // Konfiguracja połączenia z brokerem
         var options = new MqttClientOptionsBuilder()
             .WithClientId("SmartFactory_Client")
-            .WithTcpServer("localhost", 1883) // broker Mosquitto
+            .WithTcpServer("localhost", 1883)
             .Build();
 
-        // Po połączeniu — subskrybuj topic PLC
-        client.UseConnectedHandler(async e =>
+        // === HANDLERY ===
+
+        client.UseConnectedHandler(e =>
         {
-            Console.WriteLine("✅ Connected to MQTT Broker!");
-            await client.SubscribeAsync("factory/data");
-            Console.WriteLine("📡 Subscribed to topic: factory/data");
-            Console.WriteLine("➡️ You can type commands (START, STOP, RESET)");
+            isConnected = true;
+            Console.WriteLine("✅ MQTT connected");
         });
 
-        // Odbiór danych z PLC
+        client.UseDisconnectedHandler(async e =>
+        {
+            isConnected = false;
+            isSubscribed = false;
+            Console.WriteLine("⚠️ MQTT disconnected");
+            await Task.Delay(2000);
+        });
+
         client.UseApplicationMessageReceivedHandler(e =>
         {
-            string topic = e.ApplicationMessage.Topic;
             string payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
             int nullIndex = payload.IndexOf('\0');
             if (nullIndex >= 0)
                 payload = payload.Substring(0, nullIndex);
-            
-            Console.WriteLine($"📥 [{topic}] {payload}");
+
+            Console.WriteLine($"📥 [{e.ApplicationMessage.Topic}] {payload}");
         });
 
-        // Obsługa błędów połączenia
-        client.UseDisconnectedHandler(async e =>
-        {
-            Console.WriteLine("⚠️ Disconnected. Reconnecting...");
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            await client.ConnectAsync(options);
-        });
+        Console.WriteLine("Type: START / STOP / RESET / EXIT");
 
-        // Połącz z brokerem
-        await client.ConnectAsync(options);
-        Console.WriteLine("🔗 Waiting for messages...");
-
-        // Tryb interaktywny: wysyłanie komend
+        // === GŁÓWNA PĘTLA ===
         while (true)
         {
-            var cmd = Console.ReadLine()?.ToUpper()?.Trim();
-            if (string.IsNullOrWhiteSpace(cmd))
+            Console.Write("> ");
+            var cmd = Console.ReadLine()?.Trim().ToUpper();
+            if (string.IsNullOrEmpty(cmd))
                 continue;
 
-            if (cmd == "EXIT" || cmd == "QUIT")
+            // === EXIT ===
+            if (cmd == "EXIT")
             {
-                Console.WriteLine("👋 Exiting...");
+                if (isConnected)
+                {
+                     await client.PublishAsync(new MqttApplicationMessageBuilder()
+                        .WithTopic("factory/command")
+                        .WithPayload("EXIT")
+                        .Build());
+
+                    await client.DisconnectAsync();
+                }
+
+                Console.WriteLine("👋 Application closed");
                 break;
             }
 
-            var message = new MqttApplicationMessageBuilder()
-                .WithTopic("factory/command")
-                .WithPayload(cmd)
-                .WithExactlyOnceQoS()
-                .Build();
+            // === START ===
+            if (cmd == "START")
+            {
+                if (!isConnected)
+                {
+                    await client.ConnectAsync(options);
+                }
 
-            await client.PublishAsync(message);
-            Console.WriteLine($"➡️ Sent command: {cmd}");
+                if (!isSubscribed)
+                {
+                    await client.SubscribeAsync("factory/data");
+                    isSubscribed = true;
+                    Console.WriteLine("📡 Communication STARTED");
+                }
+
+                await client.PublishAsync(new MqttApplicationMessageBuilder()
+                    .WithTopic("factory/command")
+                    .WithPayload("START")
+                    .Build());
+
+                continue;
+            }
+
+            // === STOP ===
+            if (cmd == "STOP")
+            {
+                if (isSubscribed)
+                {
+                    await client.UnsubscribeAsync("factory/data");
+                    isSubscribed = false;
+                    Console.WriteLine("⛔ Communication STOPPED");
+                }
+
+                if (isConnected)
+                {
+                    await client.PublishAsync(new MqttApplicationMessageBuilder()
+                        .WithTopic("factory/command")
+                        .WithPayload("STOP")
+                        .Build());
+                }
+
+                continue;
+            }
+
+            // === RESET ===
+            if (cmd == "RESET")
+            {
+                if (isConnected)
+                {
+                    await client.PublishAsync(new MqttApplicationMessageBuilder()
+                        .WithTopic("factory/command")
+                        .WithPayload("RESET")
+                        .Build());
+
+                    Console.WriteLine("🔄 RESET sent to PLC");
+                }
+                else
+                {
+                    Console.WriteLine("⚠️ MQTT not connected");
+                }
+
+                continue;
+            }
+
+            Console.WriteLine("❓ Unknown command");
         }
-
-        await client.DisconnectAsync();
     }
 }

@@ -1,10 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
-  <GVL Name="GVL_GlobalVars" Id="{679680a8-c0b5-4f39-bc4f-3e6e594b9367}">
+  <GVL Name="GVL" Id="{679680a8-c0b5-4f39-bc4f-3e6e594b9367}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 VAR_GLOBAL
+
 	g_stProcessData : sProcessData;
-    g_bPublish : BOOL := FALSE;
+
+	//Cycle Counter
+	g_iCounter : INT := 0;
+	
+	//Control Button
+	g_bStart : BOOL := FALSE;
+    g_bStop  : BOOL := TRUE;
+    g_bReset : BOOL := FALSE;
+	g_bExit  : BOOL := FALSE;
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>

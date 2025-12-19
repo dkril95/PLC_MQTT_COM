@@ -6,7 +6,6 @@ STRUCT
 	rTemperature : REAL;
     rPressure : REAL;
     rFlowRate : REAL;
-    iCounter : INT;
 END_STRUCT
 END_TYPE
 ]]></Declaration>

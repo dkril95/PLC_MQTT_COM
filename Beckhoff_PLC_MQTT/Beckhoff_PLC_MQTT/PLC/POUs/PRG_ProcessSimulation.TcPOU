@@ -3,13 +3,29 @@
   <POU Name="PRG_ProcessSimulation" Id="{43004002-4e1a-49d0-bb21-f7f73f0035e5}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM PRG_ProcessSimulation
 VAR
-	    tCycleTime : TIME := T#100MS;
+    rTempDelta : REAL := 0.05;
+    rFlowDelta : REAL := 0.1;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[GVL_GlobalVars.g_stProcessData.rTemperature := 20.0 + SIN(TIME_TO_LREAL(TIME()) / 5000.0);
-GVL_GlobalVars.g_stProcessData.rPressure := 1.0 + 0.2 * SIN(TIME_TO_LREAL(TIME()) / 8000.0);
-GVL_GlobalVars.g_stProcessData.rFlowRate := 10.0 + 2.0 * SIN(TIME_TO_LREAL(TIME()) / 6000.0);]]></ST>
+      <ST><![CDATA[// RESET data
+IF GVL.g_bReset THEN
+    GVL.g_iCounter := 0;
+    GVL.g_stProcessData.rTemperature := 20.0;
+    GVL.g_stProcessData.rPressure := 1.0;
+    GVL.g_stProcessData.rFlowRate := 0.0;
+    GVL.g_bReset := FALSE;
+END_IF
+
+// simulation data when get START
+IF GVL.g_bStart AND NOT GVL.g_bStop THEN
+
+    GVL.g_stProcessData.rTemperature :=GVL.g_stProcessData.rTemperature + rTempDelta;
+
+    GVL.g_stProcessData.rPressure := 1.0 + (GVL.g_iCounter) * 0.001;
+
+    GVL.g_stProcessData.rFlowRate := GVL.g_stProcessData.rFlowRate + rFlowDelta;
+END_IF]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

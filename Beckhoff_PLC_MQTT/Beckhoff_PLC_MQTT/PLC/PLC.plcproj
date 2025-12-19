@@ -21,7 +21,7 @@
     <Compile Include="DUTs\sProcessData.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="GVLs\GVL_GlobalVars.TcGVL">
+    <Compile Include="GVLs\GVL.TcGVL">
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
