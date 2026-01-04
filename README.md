@@ -30,6 +30,24 @@ All message formatting is handled on the **PLC side**.
 
 ---
 
+## Project Structure
+PLC_MQTT_COM/
+├── .gitignore
+├── README.md
+├── Beckhoff_PLC_MQTT/          # TwinCAT PLC project
+│   ├── PLC_MQTT_COM.tsproj     # PLC project file
+│   ├── MAIN/                   
+│   ├── POUs/                   
+│   ├── GVL/                    
+│   └── other TwinCAT config files
+│
+├── SmartFactory_MQTT_App/      # C# client application
+│   ├── Program.cs              # Main MQTT client logic
+│   ├── SmartFactory_MQTT_App.csproj  # .NET project file
+│   └── bin/obj/ folders (build outputs) 
+
+---
+
 ## Communication Flow
 
 1. PLC connects to MQTT broker
