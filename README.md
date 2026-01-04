@@ -34,7 +34,7 @@ All message formatting is handled on the **PLC side**.
 PLC_MQTT_COM/ 
 ├── .gitignore 
 ├── README.md 
-├── Beckhoff_PLC_MQTT          # TwinCAT PLC project 
+├── Beckhoff_PLC_MQTT            # TwinCAT PLC project 
 │   ├── PLC_MQTT_COM.tsproj     # PLC project file 
 │   ├── MAIN                   
 │   ├── POUs                    
