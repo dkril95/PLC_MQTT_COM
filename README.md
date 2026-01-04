@@ -1,4 +1,4 @@
-9# SmartFactory PLC – MQTT Communication
+# SmartFactory PLC – MQTT Communication
 
 ## Overview
 This project presents **MQTT communication between a Beckhoff PLC (TwinCAT 3)** and a **C# application** using an MQTT broker.
@@ -34,17 +34,28 @@ All message formatting is handled on the **PLC side**.
 PLC_MQTT_COM/ 
 ├── .gitignore 
 ├── README.md 
-├── Beckhoff_PLC_MQTT/          # TwinCAT PLC project 
+├── Beckhoff_PLC_MQTT          # TwinCAT PLC project 
 │   ├── PLC_MQTT_COM.tsproj     # PLC project file 
-│   ├── MAIN/                    
-│   ├── POUs/                    
-│   ├── GVL/                     
+│   ├── MAIN                   
+│   ├── POUs                    
+│   ├── GVL                     
 │   └── other TwinCAT config files 
 │
-├── SmartFactory_MQTT_App/      # C# client application 
+├── SmartFactory_MQTT_App      # C# client application 
 │   ├── Program.cs              # Main MQTT client logic 
 │   ├── SmartFactory_MQTT_App.csproj  # .NET project file 
 │   └── bin/obj/ folders (build outputs)  
+
+SimpleHMI/  
+├── C#/  
+│ ├── BeckhoffHMI.sln - Visual Studio (.NET/WPF) solution  
+│ └── BeckhoffHMI_WPF/  
+│ ├── App.xaml - WPF application definition  
+│ ├── App.xaml.cs - Application startup logic  
+│ ├── AssemblyInfo.cs - Assembly metadata  
+│ ├── BeckhoffHMI_WPF.csproj - Project configuration  
+│ ├── MainWindow.xaml - Main window layout  
+│ └── MainWindow.xaml.cs - Main window logic  
 
 ---
 
